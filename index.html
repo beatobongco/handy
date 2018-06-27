@@ -8,7 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/numjs/0.16.0/numjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/0.11.7/tf.min.js"></script>
 <script>
-  let model = tf.loadModel('tfjs_artifacts/model.json')
+  let model = null
   let testImage = null
   function loadImage(src) {
     var img = new Image()
@@ -18,6 +18,11 @@
       testImage = nj.images.read(img)
     }
   }
+
+  tf.loadModel('tfjs_artifacts/model.json').then(function(res) {
+    model = res
+    loadImage('https://beatobongco.com/handy/data/zero.png')
+  })
 </script>
 </body>
 </html>
