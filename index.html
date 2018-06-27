@@ -16,12 +16,14 @@
 
     img.onload = function() {
       testImage = nj.images.read(img)
+      let inp = tf.reshape(testImage, [-1, 28, 28, 1])
+      console.log(model.predict(inp))
     }
   }
 
   tf.loadModel('tfjs_artifacts/model.json').then(function(res) {
     model = res
-    loadImage('https://beatobongco.com/handy/data/zero.png')
+    loadImage('data/zero.png')
   })
 </script>
 </body>
