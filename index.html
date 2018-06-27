@@ -10,14 +10,35 @@
 <script>
   let model = null
   let testImage = null
+  let currResult = null
+
   function loadImage(src) {
     var img = new Image()
     img.src = src
 
     img.onload = function() {
       testImage = nj.images.read(img)
-      let inp = tf.reshape(testImage, [-1, 28, 28, 1])
-      console.log(model.predict(inp))
+
+      // first, reshape the image
+      // format for shape is [n_images, x_shape, y_shape, n_steps::channels?]
+      // src: https://stackoverflow.com/questions/43895750/keras-input-shape-for-conv2d-and-manually-loaded-images
+      reshapedImage = testImage.reshape([1, 28, 28, 1])
+
+      // then create a tensor, which our model expects
+      _tensor = tf.tensor(reshapedImage.selection.data, [1, 28, 28, 1])
+
+      // gives an array of len num_classes
+      let pred_vector = model.predict(_tensor).dataSync()
+
+      //print for debugging
+      console.log(pred_vector)
+
+      // loop over and check which is 1
+      for (var i = 0; i < prediction.length; i++) {
+        if (prediction[i]) {
+          currResult = i
+        }
+      }
     }
   }
 
