@@ -5,6 +5,8 @@
 </head>
 <body>
   <h1>Handy</h1>
+  <canvas id="canvas" />
+  <p id="prediction"></p>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/numjs/0.16.0/numjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/0.11.7/tf.min.js"></script>
 <script>
@@ -15,9 +17,10 @@
   function loadImage(src) {
     var img = new Image()
     img.src = src
-
     img.onload = function() {
       testImage = nj.images.read(img)
+      // put image on canvas
+      nj.images.save(testImage, document.getElementById('canvas'))
 
       // first, reshape the image
       // format for shape is [n_images, x_shape, y_shape, n_steps::channels?]
@@ -28,15 +31,16 @@
       _tensor = tf.tensor(reshapedImage.selection.data, [1, 28, 28, 1])
 
       // gives an array of len num_classes
-      let pred_vector = model.predict(_tensor).dataSync()
+      let predVector = model.predict(_tensor).dataSync()
 
       //print for debugging
-      console.log(pred_vector)
+      console.log(predVector)
 
       // loop over and check which is 1
-      for (var i = 0; i < prediction.length; i++) {
-        if (prediction[i]) {
+      for (var i = 0; i < predVector.length; i++) {
+        if (predVector[i]) {
           currResult = i
+          document.getElementById('prediction').innerHTML = "Handy sees a " + currResult
         }
       }
     }
