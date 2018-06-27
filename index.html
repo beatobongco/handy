@@ -9,7 +9,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/0.11.7/tf.min.js"></script>
 <script>
   let model = tf.loadModel('tfjs_artifacts/model.json')
+  let testImage = null
+  function loadImage(src) {
+    var img = new Image()
+    img.src = src
 
+    img.onload = function() {
+      testImage = nj.images.read(img)
+    }
+  }
 </script>
 </body>
 </html>
