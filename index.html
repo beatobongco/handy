@@ -2,7 +2,11 @@
 <html>
 <head>
   <title>Handy: read handwritten digits with AI - beatobongco.com</title>
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css">
   <style type="text/css">
+    .container {
+      margin: 25px 75px;
+    }
     canvas {
       border: 1px solid black;
       margin-right: 10px;
@@ -16,26 +20,72 @@
                 user-select: none; /* Non-prefixed version, currently
                                       supported by Chrome and Opera */
     }
+    .message-box div {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .hidey {
+      visibility: hidden;
+    }
+    .robot {
+      font-size: 50px;
+    }
+    #message {
+      margin-top: 8px;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
-  <h1>Handy</h1>
-  <h3>Draw here!</h3>
-  <p>
-    <small>The smaller box is the actual image passed to the AI model.</small>
-  </p>
-  <div>
-    <canvas class="noselect" id="drawing-canvas" width="280" height="280"></canvas>
-    <canvas class="noselect" id="resized-drawing" width="28" height="28"></canvas>
+  <div class="container">
+    <h1>Handy</h1>
+    <h3>What is this?</h3>
+    <p>A <a href="https://www.youtube.com/watch?v=aircAruvnKk">neural network</a> that can identify single numbers that you write!</p>
+
+    <p>It was trained on the <a href="http://yann.lecun.com/exdb/mnist/">MNIST dataset</a> where it got a 99.25% accuracy score.</p>
+
+    <p>Here are some examples:</p>
+
+    <img src="images/0.jpg">
+    <img src="images/1.jpg">
+    <img src="images/2.jpg">
+    <img src="images/3.jpg">
+    <img src="images/4.jpg">
+    <img src="images/5.jpg">
+    <img src="images/6.jpg">
+    <img src="images/7.jpg">
+    <img src="images/8.jpg">
+    <img src="images/9.jpg">
+
+    <p>You'll notice however that this network seems to be performing much much worse than 99.25%. This is because I haven't done the need work to preprocess the input like for example, trimming out whitespace.</p>
+
+    <p>This is for demo purposes only. If you want to make sure Handy sees your digits, try filling in the whole canvas with your digit. :)</p>
+
+    <h3>Handy says...</h3>
+    <div class="message-box">
+      <div class="robot">🤖</div>
+      <div id="message">I'm loading... please wait. This message will change when I've been fully loaded!</div>
+    </div>
+    <div class="hidey">
+      <h3>Draw here!</h3>
+      <p>
+        The small image on the right is what's actually fed into the network.
+      </p>
+      <div>
+        <canvas class="noselect" id="drawing-canvas" width="200" height="200"></canvas>
+        <canvas class="noselect" id="resized-drawing" width="28" height="28"></canvas>
+      </div>
+      <div>
+        <button id="clear">Clear</button>
+        <button id="readDrawing">Read</button>
+      </div>
+    </div>
   </div>
-  <div>
-    <button id="clear">Clear</button>
-    <button id="readDrawing">Read</button>
-  </div>
-  <p id="message"></p>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/numjs/0.16.0/numjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/0.11.7/tf.min.js"></script>
 <script>
+  let isLoading = true
+
   // our keras model
   let model = null
 
@@ -54,7 +104,7 @@
   resizedCtx.fillStyle = '#000'
   drawingCtx.strokeStyle = '#fff'
   drawingCtx.lineJoin = 'round'
-  drawingCtx.lineWidth = 10
+  drawingCtx.lineWidth = 20
 
   // our drawing canvas' state
   let clickX = []
@@ -85,7 +135,7 @@
       for (var i = 0; i < predVector.length; i++) {
         if (predVector[i]) {
           results.push(i)
-          setMessage('Handy sees a ' + i)
+          setMessage('I see a ' + i + '!')
         }
       }
     })
@@ -170,12 +220,14 @@
   document.getElementById('clear').addEventListener('click', clearAllCanvas)
 
   document.getElementById('readDrawing').addEventListener('click', function() {
+    setMessage('Let me think...')
     loadImage(drawingCnv.toDataURL('image/png'))
   })
 
   tf.loadModel('https://beatobongco.com/handy/tfjs_artifacts/model.json').then(function(res) {
     model = res
-    setMessage('Model loaded')
+    document.querySelector('.hidey').style.visibility = 'visible'
+    setMessage('I have loaded! :)')
   })
 
   clearAllCanvas()
