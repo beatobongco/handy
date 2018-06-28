@@ -5,14 +5,52 @@
 </head>
 <body>
   <h1>Handy</h1>
-  <canvas id="canvas"></canvas>
+  <canvas class="noselect" id="drawing-canvas" width="280" height="280"></canvas>
+  <button id="clear">Clear</button>
+  <button id="readDrawing">Read</button>
+  <canvas class="noselect" id="canvas"></canvas>
   <p id="prediction"></p>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/numjs/0.16.0/numjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/0.11.7/tf.min.js"></script>
+<style type="text/css">
+  .noselect {
+    -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Safari */
+       -khtml-user-select: none; /* Konqueror HTML */
+         -moz-user-select: none; /* Firefox */
+          -ms-user-select: none; /* Internet Explorer/Edge */
+              user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome and Opera */
+  }
+</style>
 <script>
   let model = null
   let testImage = null
   let currResult = null
+
+  function predictImage(image) {
+    // first, reshape the image
+    // format for shape is [n_images, x_shape, y_shape, n_steps::channels?]
+    // src: https://stackoverflow.com/questions/43895750/keras-input-shape-for-conv2d-and-manually-loaded-images
+    reshapedImage = image.reshape([1, 28, 28, 1])
+
+    // then create a tensor, which our model expects
+    _tensor = tf.tensor(reshapedImage.selection.data, [1, 28, 28, 1])
+
+    // gives an array of len num_classes
+    let predVector = model.predict(_tensor).dataSync()
+
+    //print for debugging
+    console.log(predVector)
+
+    // loop over and check which is 1
+    for (var i = 0; i < predVector.length; i++) {
+      if (predVector[i]) {
+        currResult = i
+        document.getElementById('prediction').innerHTML = "Handy sees a " + currResult
+      }
+    }
+  }
 
   function loadImage(src) {
     var img = new Image()
@@ -22,34 +60,91 @@
       // put image on canvas
       nj.images.save(testImage, document.getElementById('canvas'))
 
-      // first, reshape the image
-      // format for shape is [n_images, x_shape, y_shape, n_steps::channels?]
-      // src: https://stackoverflow.com/questions/43895750/keras-input-shape-for-conv2d-and-manually-loaded-images
-      reshapedImage = testImage.reshape([1, 28, 28, 1])
-
-      // then create a tensor, which our model expects
-      _tensor = tf.tensor(reshapedImage.selection.data, [1, 28, 28, 1])
-
-      // gives an array of len num_classes
-      let predVector = model.predict(_tensor).dataSync()
-
-      //print for debugging
-      console.log(predVector)
-
-      // loop over and check which is 1
-      for (var i = 0; i < predVector.length; i++) {
-        if (predVector[i]) {
-          currResult = i
-          document.getElementById('prediction').innerHTML = "Handy sees a " + currResult
-        }
-      }
+      predictImage(testImage)
     }
   }
 
-  tf.loadModel('tfjs_artifacts/model.json').then(function(res) {
-    model = res
-    loadImage('data/zero.png')
+  let cnv = document.getElementById('drawing-canvas')
+  let context = cnv.getContext('2d')
+  let paint = null
+  let clickX = []
+  let clickY = []
+  let clickDrag = []
+
+  function addClick(x, y, dragging) {
+    clickX.push(x)
+    clickY.push(y)
+    clickDrag.push(dragging)
+  }
+
+  function clearCanvas() {
+    context.clearRect(0, 0, context.canvas.width, context.canvas.height)
+  }
+
+  function redraw() {
+    // clear canvas
+    clearCanvas()
+
+    context.strokeStyle = '#df4b26'
+    context.lineJoin = 'round'
+    context.lineWidth = 5
+
+    for (var i = 0; i < clickX.length; i++) {
+      context.beginPath()
+      // dont activate on i = 0
+      if (clickDrag[i] && i) {
+        context.moveTo(clickX[i - 1], clickY[i - 1])
+      } else {
+        context.moveTo(clickX[i] - 1, clickY[i])
+      }
+      context.lineTo(clickX[i] - 1, clickY[i])
+      context.closePath()
+      context.stroke()
+    }
+  }
+
+  cnv.addEventListener('mousedown', function(e) {
+    var mouseX = e.pageX - this.offsetLeft
+    var mouseY = e.pageY - this.offsetTop
+
+    paint = true
+    addClick(mouseX, mouseY)
+    redraw()
   })
+
+  cnv.addEventListener('mousemove', function(e) {
+    if (paint) {
+      var mouseX = e.pageX - this.offsetLeft
+      var mouseY = e.pageY - this.offsetTop
+      addClick(mouseX, mouseY, true)
+      redraw()
+    }
+  })
+
+  cnv.addEventListener('mouseleave', function(e) {
+    paint = false
+  })
+
+  cnv.addEventListener('mouseup', function(e) {
+    paint = false
+  })
+
+  document.getElementById('clear').addEventListener('click', function() {
+    clickX = []
+    clickY = []
+    clickDrag = []
+    clearCanvas()
+  })
+
+  document.getElementById('readDrawing').addEventListener('click', function() {
+    var _src = cnv.toDataURL('image/png')
+    loadImage(_src)
+  })
+
+  // tf.loadModel('tfjs_artifacts/model.json').then(function(res) {
+  //   model = res
+  //   loadImage('data/zero.png')
+  // })
 </script>
 </body>
 </html>
