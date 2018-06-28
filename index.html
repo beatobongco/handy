@@ -57,6 +57,7 @@
     img.src = src
     img.onload = function() {
       testImage = nj.images.read(img)
+      testImage = nj.images.resize(testImage, 28, 28)
       // put image on canvas
       nj.images.save(testImage, document.getElementById('canvas'))
 
