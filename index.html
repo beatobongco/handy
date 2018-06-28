@@ -1,32 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title></title>
+  <title>Handy: read handwritten digits with AI - beatobongco.com</title>
+  <style type="text/css">
+    canvas {
+      border: 1px solid black;
+      margin-right: 10px;
+    }
+    .noselect {
+      -webkit-touch-callout: none; /* iOS Safari */
+        -webkit-user-select: none; /* Safari */
+         -khtml-user-select: none; /* Konqueror HTML */
+           -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* Internet Explorer/Edge */
+                user-select: none; /* Non-prefixed version, currently
+                                      supported by Chrome and Opera */
+    }
+  </style>
 </head>
 <body>
   <h1>Handy</h1>
-  <canvas class="noselect" id="drawing-canvas" width="280" height="280"></canvas>
-  <button id="clear">Clear</button>
-  <button id="readDrawing">Read</button>
-  <canvas class="noselect" id="canvas"></canvas>
-  <p id="prediction"></p>
+  <h3>Draw here!</h3>
+  <p>
+    <small>The smaller box is the actual image passed to the AI model.</small>
+  </p>
+  <div>
+    <canvas class="noselect" id="drawing-canvas" width="280" height="280"></canvas>
+    <canvas class="noselect" id="resized-drawing" width="28" height="28"></canvas>
+  </div>
+  <div>
+    <button id="clear">Clear</button>
+    <button id="readDrawing">Read</button>
+  </div>
+  <p id="message"></p>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/numjs/0.16.0/numjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/0.11.7/tf.min.js"></script>
-<style type="text/css">
-  .noselect {
-    -webkit-touch-callout: none; /* iOS Safari */
-      -webkit-user-select: none; /* Safari */
-       -khtml-user-select: none; /* Konqueror HTML */
-         -moz-user-select: none; /* Firefox */
-          -ms-user-select: none; /* Internet Explorer/Edge */
-              user-select: none; /* Non-prefixed version, currently
-                                    supported by Chrome and Opera */
-  }
-</style>
 <script>
+  // our keras model
   let model = null
-  let testImage = null
-  let currResult = null
+
+  // tells us whether we are allowed to draw on canvas
+  let paint = null
+
+  let results = []
+
+  // canvas vars
+  let resizedCnv = document.getElementById('resized-drawing')
+  let resizedCtx = resizedCnv.getContext('2d')
+  let drawingCnv = document.getElementById('drawing-canvas')
+  let drawingCtx = drawingCnv.getContext('2d')
+
+  drawingCtx.fillStyle = '#000'
+  resizedCtx.fillStyle = '#000'
+  drawingCtx.strokeStyle = '#fff'
+  drawingCtx.lineJoin = 'round'
+  drawingCtx.lineWidth = 10
+
+  // our drawing canvas' state
+  let clickX = []
+  let clickY = []
+  let clickDrag = []
+
+  function setMessage(msg) {
+    document.getElementById('message').innerHTML = msg
+  }
+
+  function clearCanvas(ctx) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+  }
 
   function predictImage(image) {
     // first, reshape the image
@@ -38,39 +80,34 @@
     _tensor = tf.tensor(reshapedImage.selection.data, [1, 28, 28, 1])
 
     // gives an array of len num_classes
-    let predVector = model.predict(_tensor).dataSync()
-
-    //print for debugging
-    console.log(predVector)
-
-    // loop over and check which is 1
-    for (var i = 0; i < predVector.length; i++) {
-      if (predVector[i]) {
-        currResult = i
-        document.getElementById('prediction').innerHTML = "Handy sees a " + currResult
+    model.predict(_tensor).data().then(function(predVector) {
+      // loop over and check which is 1, that's your class
+      for (var i = 0; i < predVector.length; i++) {
+        if (predVector[i]) {
+          results.push(i)
+          setMessage('Handy sees a ' + i)
+        }
       }
-    }
+    })
   }
 
   function loadImage(src) {
-    var img = new Image()
+    let img = new Image()
     img.src = src
-    img.onload = function() {
-      testImage = nj.images.read(img)
-      testImage = nj.images.resize(testImage, 28, 28)
-      // put image on canvas
-      nj.images.save(testImage, document.getElementById('canvas'))
+    img.crossOrigin = 'Anonymous'
 
-      predictImage(testImage)
+    img.onload = function() {
+      // resize first if not correct dims
+      if (this.width !== 28 || this.height !== 28) {
+        clearCanvas(resizedCtx)
+        resizedCtx.drawImage(img, 0, 0, 28, 28)
+
+        loadImage(resizedCnv.toDataURL('image/jpeg'))
+      } else {
+        predictImage(nj.images.read(img))
+      }
     }
   }
-
-  let cnv = document.getElementById('drawing-canvas')
-  let context = cnv.getContext('2d')
-  let paint = null
-  let clickX = []
-  let clickY = []
-  let clickDrag = []
 
   function addClick(x, y, dragging) {
     clickX.push(x)
@@ -78,33 +115,25 @@
     clickDrag.push(dragging)
   }
 
-  function clearCanvas() {
-    context.clearRect(0, 0, context.canvas.width, context.canvas.height)
-  }
-
   function redraw() {
     // clear canvas
-    clearCanvas()
-
-    context.strokeStyle = '#df4b26'
-    context.lineJoin = 'round'
-    context.lineWidth = 5
+    clearCanvas(drawingCtx)
 
     for (var i = 0; i < clickX.length; i++) {
-      context.beginPath()
+      drawingCtx.beginPath()
       // dont activate on i = 0
       if (clickDrag[i] && i) {
-        context.moveTo(clickX[i - 1], clickY[i - 1])
+        drawingCtx.moveTo(clickX[i - 1], clickY[i - 1])
       } else {
-        context.moveTo(clickX[i] - 1, clickY[i])
+        drawingCtx.moveTo(clickX[i] - 1, clickY[i])
       }
-      context.lineTo(clickX[i] - 1, clickY[i])
-      context.closePath()
-      context.stroke()
+      drawingCtx.lineTo(clickX[i] - 1, clickY[i])
+      drawingCtx.closePath()
+      drawingCtx.stroke()
     }
   }
 
-  cnv.addEventListener('mousedown', function(e) {
+  drawingCnv.addEventListener('mousedown', function(e) {
     var mouseX = e.pageX - this.offsetLeft
     var mouseY = e.pageY - this.offsetTop
 
@@ -113,7 +142,7 @@
     redraw()
   })
 
-  cnv.addEventListener('mousemove', function(e) {
+  drawingCnv.addEventListener('mousemove', function(e) {
     if (paint) {
       var mouseX = e.pageX - this.offsetLeft
       var mouseY = e.pageY - this.offsetTop
@@ -122,29 +151,34 @@
     }
   })
 
-  cnv.addEventListener('mouseleave', function(e) {
+  drawingCnv.addEventListener('mouseleave', function(e) {
     paint = false
   })
 
-  cnv.addEventListener('mouseup', function(e) {
+  drawingCnv.addEventListener('mouseup', function(e) {
     paint = false
   })
 
-  document.getElementById('clear').addEventListener('click', function() {
+  function clearAllCanvas() {
     clickX = []
     clickY = []
     clickDrag = []
-    clearCanvas()
-  })
+    clearCanvas(drawingCtx)
+    clearCanvas(resizedCtx)
+  }
+
+  document.getElementById('clear').addEventListener('click', clearAllCanvas)
 
   document.getElementById('readDrawing').addEventListener('click', function() {
-    var _src = cnv.toDataURL('image/png')
-    loadImage(_src)
+    loadImage(drawingCnv.toDataURL('image/png'))
   })
 
-  tf.loadModel('tfjs_artifacts/model.json').then(function(res) {
+  tf.loadModel('https://beatobongco.com/handy/tfjs_artifacts/model.json').then(function(res) {
     model = res
+    setMessage('Model loaded')
   })
+
+  clearAllCanvas()
 </script>
 </body>
 </html>
