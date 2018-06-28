@@ -20,7 +20,15 @@
                 user-select: none; /* Non-prefixed version, currently
                                       supported by Chrome and Opera */
     }
-    .message-box div {
+    .message-box .box{
+      color: white;
+      background-color: #2980b9;
+      display: inline-block;
+      border-radius: 5px;
+      padding: 5px 10px;
+    }
+    .message-box .robot,
+    .message-box #message {
       display: inline-block;
       vertical-align: middle;
     }
@@ -40,31 +48,14 @@
   <div class="container">
     <h1>Handy</h1>
     <h3>What is this?</h3>
-    <p>A <a href="https://www.youtube.com/watch?v=aircAruvnKk">neural network</a> that can identify single numbers that you write!</p>
-
-    <p>It was trained on the <a href="http://yann.lecun.com/exdb/mnist/">MNIST dataset</a> where it got a 99.25% accuracy score.</p>
-
-    <p>Here are some examples:</p>
-
-    <img src="images/0.jpg">
-    <img src="images/1.jpg">
-    <img src="images/2.jpg">
-    <img src="images/3.jpg">
-    <img src="images/4.jpg">
-    <img src="images/5.jpg">
-    <img src="images/6.jpg">
-    <img src="images/7.jpg">
-    <img src="images/8.jpg">
-    <img src="images/9.jpg">
-
-    <p>You'll notice however that this network seems to be performing much much worse than 99.25%. This is because I haven't done the need work to preprocess the input like for example, trimming out whitespace.</p>
-
-    <p>This is for demo purposes only. If you want to make sure Handy sees your digits, try filling in the whole canvas with your digit. :)</p>
+    <p>A <a href="https://www.youtube.com/watch?v=aircAruvnKk">neural network</a> that tries to identify single numbers that you write!</p>
 
     <h3>Handy says...</h3>
     <div class="message-box">
-      <div class="robot">🤖</div>
-      <div id="message">I'm loading... please wait. This message will change when I've been fully loaded!</div>
+      <div class="box">
+        <div class="robot">🤖</div>
+        <div id="message">Loading around 5MB... This message will change when done!</div>
+      </div>
     </div>
     <div class="hidey">
       <h3>Draw here!</h3>
@@ -79,6 +70,29 @@
         <button id="clear">Clear</button>
         <button id="readDrawing">Read</button>
       </div>
+      <h3>Some thoughts</h3>
+      <p>This network was trained on the <a href="http://yann.lecun.com/exdb/mnist/">MNIST dataset</a>.</p>
+
+      <p>Here are some examples of the training data:</p>
+
+      <img src="images/0.jpg">
+      <img src="images/1.jpg">
+      <img src="images/2.jpg">
+      <img src="images/3.jpg">
+      <img src="images/4.jpg">
+      <img src="images/5.jpg">
+      <img src="images/6.jpg">
+      <img src="images/7.jpg">
+      <img src="images/8.jpg">
+      <img src="images/9.jpg">
+
+      <p>The network supposedly got a <strong>99.25%</strong> score. You'll notice however that this network seems to be performing much much worse than this. </p>
+
+      <p>(Note: I just used the code on the <a href="https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py">keras repo</a> as my motivation was more to muck around <a href="https://js.tensorflow.org/">tensorflow.js</a>).</p>
+
+      <p>My current intuition is this is because I haven't done the needed work to preprocess the input from the canvas like for example, trimming out whitespace or sharpening the image.</p>
+
+      <p>This just means both the network and I have much room to improve. If you want to make sure Handy sees your digits, try filling in the whole canvas with your digit. :)</p>
     </div>
   </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/numjs/0.16.0/numjs.min.js"></script>
@@ -131,6 +145,7 @@
 
     // gives an array of len num_classes
     model.predict(_tensor).data().then(function(predVector) {
+      console.log(predVector)
       // loop over and check which is 1, that's your class
       for (var i = 0; i < predVector.length; i++) {
         if (predVector[i]) {
@@ -227,7 +242,7 @@
   tf.loadModel('https://beatobongco.com/handy/tfjs_artifacts/model.json').then(function(res) {
     model = res
     document.querySelector('.hidey').style.visibility = 'visible'
-    setMessage('I have loaded! :)')
+    setMessage('I have loaded! You can draw now! :)')
   })
 
   clearAllCanvas()

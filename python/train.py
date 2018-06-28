@@ -2,7 +2,6 @@
 
 Gets to 99.25% test accuracy after 12 epochs
 (there is still a lot of margin for parameter tuning).
-16 seconds per epoch on a GRID K520 GPU.
 '''
 
 import keras
@@ -14,7 +13,7 @@ from keras import backend as K
 
 batch_size = 128
 num_classes = 10
-epochs = 20
+epochs = 12
 
 # input image dimensions
 img_rows, img_cols = 28, 28
