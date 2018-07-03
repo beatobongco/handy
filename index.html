@@ -5,9 +5,17 @@
   <meta name="description" content="A client-side neural network that tries to identify single numbers that you draw!" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css">
+  <link href='https://fonts.googleapis.com/css?family=Roboto:400' rel='stylesheet' type='text/css'>
   <style type="text/css">
+    body {
+      font-family: 'Roboto';
+    }
     .container {
-      margin: 25px 75px;
+      margin: 50px 75px;
+      max-width: 700px;
+    }
+    p {
+      line-height: 1.5rem;
     }
     canvas {
       border: 1px solid black;
@@ -33,9 +41,6 @@
     .message-box #message {
       display: inline-block;
       vertical-align: middle;
-    }
-    .hidey {
-      visibility: hidden;
     }
     .robot {
       font-size: 50px;
@@ -68,44 +73,47 @@
         <div id="message">Loading around 5MB... This message will change when done!</div>
       </div>
     </div>
-    <div class="hidey">
-      <h3>Draw here!</h3>
-      <p>
-        The small image on the right is what's actually fed into the network.
-      </p>
-      <div>
-        <canvas class="noselect" id="drawing-canvas" width="200" height="200"></canvas>
-        <canvas class="noselect" id="resized-drawing" width="28" height="28"></canvas>
-      </div>
-      <div>
-        <button id="clear">Clear</button>
-        <button id="readDrawing">Read</button>
-      </div>
-      <h3>Some thoughts</h3>
-
-      <p>This network was trained on the <a href="http://yann.lecun.com/exdb/mnist/">MNIST dataset</a>.</p>
-
-      <p>Here are some examples of the training data:</p>
-
-      <img src="images/0.jpg">
-      <img src="images/1.jpg">
-      <img src="images/2.jpg">
-      <img src="images/3.jpg">
-      <img src="images/4.jpg">
-      <img src="images/5.jpg">
-      <img src="images/6.jpg">
-      <img src="images/7.jpg">
-      <img src="images/8.jpg">
-      <img src="images/9.jpg">
-
-      <p>The network supposedly got a <strong>99.25%</strong> score. You'll notice however that this network seems to be performing much much worse than this. </p>
-
-      <p>I just used the default code on the <a href="https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py">keras repo</a>. My motivation was more to muck around <a href="https://js.tensorflow.org/">tensorflow.js</a>, allow user input, and see if I could make a client-side implementation work.</p>
-
-      <p>My current intuition is this is because I haven't done the needed work to preprocess the input from the canvas like for example, trimming out whitespace or sharpening the image.</p>
-
-      <p>This just means both the network and I have much room to improve. If you want to make sure Handy sees your digits, try filling in the whole canvas with your digit. :)</p>
+    <h3>Draw here when loaded!</h3>
+    <div>
+      <canvas class="noselect" id="drawing-canvas" width="200" height="200"></canvas>
+      <canvas class="noselect" id="resized-drawing" width="28" height="28"></canvas>
     </div>
+    <div>
+      <button id="clear">Clear</button>
+      <button id="readDrawing" disabled>Loading...</button>
+    </div>
+    <p>
+      <small>The small image on the right is what's actually fed into the network.</small>
+    </p>
+
+    <h3>Some thoughts</h3>
+
+    <p>This network was trained on the <a href="http://yann.lecun.com/exdb/mnist/">MNIST dataset</a> with <a href="https://github.com/keras-team/keras">keras</a> and <a href="https://js.tensorflow.org/">tensorflow.js</a>.</p>
+
+    <p>Here are some examples of the training data:</p>
+
+    <img src="images/0.jpg">
+    <img src="images/1.jpg">
+    <img src="images/2.jpg">
+    <img src="images/3.jpg">
+    <img src="images/4.jpg">
+    <img src="images/5.jpg">
+    <img src="images/6.jpg">
+    <img src="images/7.jpg">
+    <img src="images/8.jpg">
+    <img src="images/9.jpg">
+
+    <p>I just used the default network architecture and hyperparameters on the example on the keras repo. My motivation was more to muck around tensorflow.js, allow user input, and see if I could make a client-side implementation work.</p>
+
+    <p>The network supposedly got a <strong>99.25%</strong> score. You'll notice however that this network seems to be performing much much worse than this.</p>
+
+    <p>My current intuition is this is because I haven't done the needed work to preprocess the input from the canvas like for example, detecting the center of the drawing and trimming out whitespace or sharpening the image.</p>
+
+    <p>I think accuracy could be improved by augmenting the training dataset by applying a range of effects like rotating, skewing, and playing with scale.</p>
+
+    <p>This just means both the network and I have much room to improve. If you want to make sure Handy sees your digits, try filling in the whole canvas with your digit. :)</p>
+
+    <p>As always, made with 🔥 by <a href="https://beatobongco.com/">Beato</a>. Check out my other <a href="https://beatobongco.com/UI-Kata/">fun stuff</a>!</p>
   </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/numjs/0.16.0/numjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/0.11.7/tf.min.js"></script>
@@ -251,7 +259,9 @@
 
   tf.loadModel('https://beatobongco.com/handy/tfjs_artifacts/model.json').then(function(res) {
     model = res
-    document.querySelector('.hidey').style.visibility = 'visible'
+    var drawBtn = document.getElementById('readDrawing')
+    drawBtn.disabled = false
+    drawBtn.innerHTML = 'Read'
     setMessage('I have loaded! You can draw now! :)')
   })
 
