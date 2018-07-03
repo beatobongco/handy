@@ -3,6 +3,7 @@
 <head>
   <title>Handy: read handwritten digits with AI - beatobongco.com</title>
   <meta name="description" content="A client-side neural network that tries to identify single numbers that you draw!" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css">
   <style type="text/css">
     .container {
@@ -44,6 +45,15 @@
       font-size: 18px;
     }
   </style>
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-56608851-1', 'auto');
+    ga('send', 'pageview');
+  </script>
 </head>
 <body>
   <div class="container">
@@ -72,6 +82,7 @@
         <button id="readDrawing">Read</button>
       </div>
       <h3>Some thoughts</h3>
+
       <p>This network was trained on the <a href="http://yann.lecun.com/exdb/mnist/">MNIST dataset</a>.</p>
 
       <p>Here are some examples of the training data:</p>
@@ -89,7 +100,7 @@
 
       <p>The network supposedly got a <strong>99.25%</strong> score. You'll notice however that this network seems to be performing much much worse than this. </p>
 
-      <p>I just used the default code on the <a href="https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py">keras repo</a>. My motivation was more to muck around <a href="https://js.tensorflow.org/">tensorflow.js</a>), create the input, and see if I could make a client-side implementation work.</p>
+      <p>I just used the default code on the <a href="https://github.com/keras-team/keras/blob/master/examples/mnist_cnn.py">keras repo</a>. My motivation was more to muck around <a href="https://js.tensorflow.org/">tensorflow.js</a>, allow user input, and see if I could make a client-side implementation work.</p>
 
       <p>My current intuition is this is because I haven't done the needed work to preprocess the input from the canvas like for example, trimming out whitespace or sharpening the image.</p>
 
