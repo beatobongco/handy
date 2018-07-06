@@ -47,7 +47,8 @@
     }
     #message {
       margin-top: 8px;
-      font-size: 18px;
+      font-size: 20px;
+      font-weight: 600;
     }
   </style>
   <script>
@@ -72,7 +73,7 @@
     <div class="message-box">
       <div class="box">
         <div class="robot">🤖</div>
-        <div id="message">Loading around 5MB... This message will change when done!</div>
+        <div id="message">Loading...</div>
       </div>
     </div>
     <h3>Draw here when loaded!</h3>
@@ -88,9 +89,11 @@
       <small>The small image on the right is what's actually fed into the network.</small>
     </p>
 
-    <h3>Some thoughts</h3>
+    <h3>What I did</h3>
 
-    <p>This network was trained on the <a href="http://yann.lecun.com/exdb/mnist/">MNIST dataset</a> with <a href="https://github.com/keras-team/keras">keras</a> and <a href="https://js.tensorflow.org/">tensorflow.js</a>.</p>
+    <p>
+      1. First I trained a convolutional neural network through <a href="https://github.com/keras-team/keras">keras</a> with the <a href="http://yann.lecun.com/exdb/mnist/">MNIST dataset</a>. This just used the keras repo's defaults. It has an accuracy of 99.25% and could still be improved but is good enough for now.
+    </p>
 
     <p>Here are some examples of the training data:</p>
 
@@ -105,171 +108,37 @@
     <img src="images/8.jpg">
     <img src="images/9.jpg">
 
-    <p>I just used the default network architecture and hyperparameters on the example on the keras repo. My motivation was more to muck around tensorflow.js, allow user input, and see if I could make a client-side implementation work.</p>
+    <p>
+      2. Then I saved the model and used `tensorflowjs_converter` to convert. <a href="https://js.tensorflow.org/tutorials/import-keras.html">Here</a> is a nifty tutorial.
+    </p>
 
-    <p>The network supposedly got a <strong>99.25%</strong> score. You'll notice however that this network seems to be performing much much worse than this.</p>
+    <p>
+      3. In <a href="js/predict.js">predict.js</a> you'll find the <a href="https://js.tensorflow.org/">tensorflow.js</a> code used to import the saved model, convert an image into a tensor, then predict the class!
+    </p>
+
+    <p>
+      4. In <a href="js/draw.js">draw.js</a> you'll find the js code that allows drawing on the canvas. If you want to see the whole picture check out the <a href="https://github.com/beatobongco/handy">repo</a>.
+    </p>
+
+    <h3>Some thoughts</h3>
+
+    <p>My motivation was more to muck around tensorflow.js, allow user input, and see if I could make a client-side implementation work.</p>
+
+    <p>Even if the network got a 99.25% score, you'll notice it misclassifies your drawings at times.</p>
 
     <p>My current intuition is this is because I haven't done the needed work to preprocess the input from the canvas like for example, detecting the center of the drawing and trimming out whitespace or sharpening the image.</p>
 
-    <p>I think accuracy could be improved by augmenting the training dataset by applying a range of effects like rotating, skewing, and playing with scale.</p>
+    <p>Also, I think accuracy could be improved by augmenting the training dataset by applying a range of effects like rotating, skewing, and playing with scale and then retraining.</p>
 
-    <p>This just means both the network and I have much room to improve. If you want to make sure Handy sees your digits, try filling in the whole canvas with your digit. :)</p>
+    <p>If you want to make sure Handy sees your digits, try filling in the whole canvas with your digit. :)</p>
 
     <hr>
 
-    <p>As always, made with 🔥 by <a href="https://beatobongco.com/">Beato</a>. Check out my other <a href="https://beatobongco.com/UI-Kata/">fun stuff</a>!</p>
+    <p><small>Made with 🔥 by <a href="https://beatobongco.com/UI-Kata/">Beato</a></small>.</p>
   </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/numjs/0.16.0/numjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/0.11.7/tf.min.js"></script>
-<script>
-  // our keras model
-  let model = null
-
-  // tells us whether we are allowed to draw on canvas
-  let paint = null
-
-  let results = []
-
-  // canvas vars
-  let resizedCnv = document.getElementById('resized-drawing')
-  let resizedCtx = resizedCnv.getContext('2d')
-  let drawingCnv = document.getElementById('drawing-canvas')
-  let drawingCtx = drawingCnv.getContext('2d')
-
-  drawingCtx.fillStyle = '#000'
-  resizedCtx.fillStyle = '#000'
-  drawingCtx.strokeStyle = '#fff'
-  drawingCtx.lineJoin = 'round'
-  drawingCtx.lineWidth = 20
-
-  // our drawing canvas' state
-  let clickX = []
-  let clickY = []
-  let clickDrag = []
-
-  function setMessage(msg) {
-    document.getElementById('message').innerHTML = msg
-  }
-
-  function clearCanvas(ctx) {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-  }
-
-  function predictImage(image) {
-    // first, reshape the image
-    // format for shape is [n_images, x_shape, y_shape, n_steps::channels?]
-    // src: https://stackoverflow.com/questions/43895750/keras-input-shape-for-conv2d-and-manually-loaded-images
-    reshapedImage = image.reshape([1, 28, 28, 1])
-
-    // then create a tensor, which our model expects
-    _tensor = tf.tensor(reshapedImage.selection.data, [1, 28, 28, 1])
-
-    // gives an array of len num_classes
-    model.predict(_tensor).data().then(function(predVector) {
-      console.log(predVector)
-      // loop over and check which is 1, that's your class
-      for (var i = 0; i < predVector.length; i++) {
-        if (predVector[i]) {
-          results.push(i)
-          setMessage('I see a ' + i + '!')
-        }
-      }
-    })
-  }
-
-  function loadImage(src) {
-    let img = new Image()
-    img.src = src
-    img.crossOrigin = 'Anonymous'
-
-    img.onload = function() {
-      // resize first if not correct dims
-      if (this.width !== 28 || this.height !== 28) {
-        clearCanvas(resizedCtx)
-        resizedCtx.drawImage(img, 0, 0, 28, 28)
-
-        loadImage(resizedCnv.toDataURL('image/jpeg'))
-      } else {
-        predictImage(nj.images.read(img))
-      }
-    }
-  }
-
-  function addClick(x, y, dragging) {
-    clickX.push(x)
-    clickY.push(y)
-    clickDrag.push(dragging)
-  }
-
-  function redraw() {
-    // clear canvas
-    clearCanvas(drawingCtx)
-
-    for (var i = 0; i < clickX.length; i++) {
-      drawingCtx.beginPath()
-      // dont activate on i = 0
-      if (clickDrag[i] && i) {
-        drawingCtx.moveTo(clickX[i - 1], clickY[i - 1])
-      } else {
-        drawingCtx.moveTo(clickX[i] - 1, clickY[i])
-      }
-      drawingCtx.lineTo(clickX[i] - 1, clickY[i])
-      drawingCtx.closePath()
-      drawingCtx.stroke()
-    }
-  }
-
-  drawingCnv.addEventListener('mousedown', function(e) {
-    var mouseX = e.pageX - this.offsetLeft
-    var mouseY = e.pageY - this.offsetTop
-
-    paint = true
-    addClick(mouseX, mouseY)
-    redraw()
-  })
-
-  drawingCnv.addEventListener('mousemove', function(e) {
-    if (paint) {
-      var mouseX = e.pageX - this.offsetLeft
-      var mouseY = e.pageY - this.offsetTop
-      addClick(mouseX, mouseY, true)
-      redraw()
-    }
-  })
-
-  drawingCnv.addEventListener('mouseleave', function(e) {
-    paint = false
-  })
-
-  drawingCnv.addEventListener('mouseup', function(e) {
-    paint = false
-  })
-
-  function clearAllCanvas() {
-    clickX = []
-    clickY = []
-    clickDrag = []
-    clearCanvas(drawingCtx)
-    clearCanvas(resizedCtx)
-  }
-
-  document.getElementById('clear').addEventListener('click', clearAllCanvas)
-
-  document.getElementById('readDrawing').addEventListener('click', function() {
-    setMessage('Let me think...')
-    loadImage(drawingCnv.toDataURL('image/png'))
-  })
-
-  tf.loadModel('https://beatobongco.com/handy/tfjs_artifacts/model.json').then(function(res) {
-    model = res
-    var drawBtn = document.getElementById('readDrawing')
-    drawBtn.disabled = false
-    drawBtn.innerHTML = 'Read'
-    setMessage('I have loaded! You can draw now! :)')
-  })
-
-  clearAllCanvas()
-</script>
+<script src="js/draw.js"></script>
+<script src="js/predict.js"></script>
 </body>
 </html>
