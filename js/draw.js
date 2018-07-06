@@ -59,29 +59,53 @@ function clearAllCanvas() {
   clearCanvas(resizedCtx)
 }
 
-drawingCnv.addEventListener('mousedown', function(e) {
-  var mouseX = e.pageX - this.offsetLeft
-  var mouseY = e.pageY - this.offsetTop
+function drawMove(e, cnv) {
+  if (paint) {
+    var mouseX = e.pageX - cnv.offsetLeft
+    var mouseY = e.pageY - cnv.offsetTop
+    addClick(mouseX, mouseY, true)
+    redraw()
+  }
+}
+
+function drawDown(e, cnv) {
+  var mouseX = e.pageX - cnv.offsetLeft
+  var mouseY = e.pageY - cnv.offsetTop
 
   paint = true
   addClick(mouseX, mouseY)
   redraw()
+}
+
+drawingCnv.addEventListener('mousedown', function(e) {
+  drawDown(e, this)
+})
+
+drawingCnv.addEventListener('touchstart', function(e) {
+  drawDown(e, this)
+})
+
+drawingCnv.addEventListener('touchmove', function(e) {
+  drawMove(e, this)
 })
 
 drawingCnv.addEventListener('mousemove', function(e) {
-  if (paint) {
-    var mouseX = e.pageX - this.offsetLeft
-    var mouseY = e.pageY - this.offsetTop
-    addClick(mouseX, mouseY, true)
-    redraw()
-  }
+  drawMove(e, this)
 })
 
-drawingCnv.addEventListener('mouseleave', function(e) {
+drawingCnv.addEventListener('mouseleave', function() {
   paint = false
 })
 
-drawingCnv.addEventListener('mouseup', function(e) {
+drawingCnv.addEventListener('mouseup', function() {
+  paint = false
+})
+
+drawingCnv.addEventListener('touchend', function() {
+  paint = false
+})
+
+drawingCnv.addEventListener('touchcancel', function() {
   paint = false
 })
 
